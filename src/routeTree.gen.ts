@@ -9,12 +9,42 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ScheduleRouteImport } from './routes/schedule'
+import { Route as LogsRouteImport } from './routes/logs'
+import { Route as HistoryRouteImport } from './routes/history'
 import { Route as GenerateRouteImport } from './routes/generate'
+import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScheduleRoute = ScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LogsRoute = LogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GenerateRoute = GenerateRouteImport.update({
   id: '/generate',
   path: '/generate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountsRoute = AccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,37 +55,114 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/generate': typeof GenerateRoute
+  '/history': typeof HistoryRoute
+  '/logs': typeof LogsRoute
+  '/schedule': typeof ScheduleRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/generate': typeof GenerateRoute
+  '/history': typeof HistoryRoute
+  '/logs': typeof LogsRoute
+  '/schedule': typeof ScheduleRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/generate': typeof GenerateRoute
+  '/history': typeof HistoryRoute
+  '/logs': typeof LogsRoute
+  '/schedule': typeof ScheduleRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/generate'
+  fullPaths:
+    | '/'
+    | '/accounts'
+    | '/generate'
+    | '/history'
+    | '/logs'
+    | '/schedule'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/generate'
-  id: '__root__' | '/' | '/generate'
+  to:
+    | '/'
+    | '/accounts'
+    | '/generate'
+    | '/history'
+    | '/logs'
+    | '/schedule'
+    | '/settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/accounts'
+    | '/generate'
+    | '/history'
+    | '/logs'
+    | '/schedule'
+    | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountsRoute: typeof AccountsRoute
   GenerateRoute: typeof GenerateRoute
+  HistoryRoute: typeof HistoryRoute
+  LogsRoute: typeof LogsRoute
+  ScheduleRoute: typeof ScheduleRoute
+  SettingsRoute: typeof SettingsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/schedule': {
+      id: '/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof ScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/logs': {
+      id: '/logs'
+      path: '/logs'
+      fullPath: '/logs'
+      preLoaderRoute: typeof LogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/generate': {
       id: '/generate'
       path: '/generate'
       fullPath: '/generate'
       preLoaderRoute: typeof GenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accounts': {
+      id: '/accounts'
+      path: '/accounts'
+      fullPath: '/accounts'
+      preLoaderRoute: typeof AccountsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,7 +177,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountsRoute: AccountsRoute,
   GenerateRoute: GenerateRoute,
+  HistoryRoute: HistoryRoute,
+  LogsRoute: LogsRoute,
+  ScheduleRoute: ScheduleRoute,
+  SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
