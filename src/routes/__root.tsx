@@ -7,6 +7,8 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { Toaster } from "@/components/ui/sonner";
+import { AppLayout } from "@/components/AppLayout";
 
 import appCss from "../styles.css?url";
 
@@ -72,8 +74,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "AutoPost AI — AI-powered social media automation" },
+      { name: "description", content: "Automate daily LinkedIn and Instagram content with GPT-4o and DALL·E 3." },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Lovable App" },
       { property: "og:description", content: "Lovable Generated Project" },
@@ -113,7 +115,8 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AppLayout />
+      <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
 }
