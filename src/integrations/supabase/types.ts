@@ -14,7 +14,159 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      logs: {
+        Row: {
+          created_at: string
+          id: string
+          level: string
+          message: string
+          run_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level: string
+          message: string
+          run_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          run_id?: string | null
+        }
+        Relationships: []
+      }
+      posts: {
+        Row: {
+          content: string
+          created_at: string
+          error_msg: string | null
+          external_id: string | null
+          id: string
+          image_prompt: string | null
+          image_url: string | null
+          platform: string
+          posted_at: string
+          run_id: string | null
+          status: string
+          topic: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          error_msg?: string | null
+          external_id?: string | null
+          id?: string
+          image_prompt?: string | null
+          image_url?: string | null
+          platform: string
+          posted_at?: string
+          run_id?: string | null
+          status: string
+          topic: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          error_msg?: string | null
+          external_id?: string | null
+          id?: string
+          image_prompt?: string | null
+          image_url?: string | null
+          platform?: string
+          posted_at?: string
+          run_id?: string | null
+          status?: string
+          topic?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          active_days: string[]
+          app_name: string
+          default_category: string
+          default_image_style: string
+          default_tone: string
+          id: number
+          image_prompt: string
+          instagram_prompt: string
+          linkedin_prompt: string
+          notification_email: string | null
+          post_time: string
+          post_to_instagram: boolean
+          post_to_linkedin: boolean
+          schedule_enabled: boolean
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          active_days?: string[]
+          app_name?: string
+          default_category?: string
+          default_image_style?: string
+          default_tone?: string
+          id?: number
+          image_prompt?: string
+          instagram_prompt?: string
+          linkedin_prompt?: string
+          notification_email?: string | null
+          post_time?: string
+          post_to_instagram?: boolean
+          post_to_linkedin?: boolean
+          schedule_enabled?: boolean
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          active_days?: string[]
+          app_name?: string
+          default_category?: string
+          default_image_style?: string
+          default_tone?: string
+          id?: number
+          image_prompt?: string
+          instagram_prompt?: string
+          linkedin_prompt?: string
+          notification_email?: string | null
+          post_time?: string
+          post_to_instagram?: boolean
+          post_to_linkedin?: boolean
+          schedule_enabled?: boolean
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
