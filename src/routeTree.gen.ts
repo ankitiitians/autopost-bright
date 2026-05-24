@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as LogsRouteImport } from './routes/logs'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as GenerateRouteImport } from './routes/generate'
 import { Route as AccountsRouteImport } from './routes/accounts'
@@ -31,6 +32,11 @@ const ScheduleRoute = ScheduleRouteImport.update({
 const LogsRoute = LogsRouteImport.update({
   id: '/logs',
   path: '/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoryRoute = HistoryRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/accounts': typeof AccountsRoute
   '/generate': typeof GenerateRoute
   '/history': typeof HistoryRoute
+  '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/accounts': typeof AccountsRoute
   '/generate': typeof GenerateRoute
   '/history': typeof HistoryRoute
+  '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/accounts': typeof AccountsRoute
   '/generate': typeof GenerateRoute
   '/history': typeof HistoryRoute
+  '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
   '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/generate'
     | '/history'
+    | '/login'
     | '/logs'
     | '/schedule'
     | '/settings'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/generate'
     | '/history'
+    | '/login'
     | '/logs'
     | '/schedule'
     | '/settings'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/generate'
     | '/history'
+    | '/login'
     | '/logs'
     | '/schedule'
     | '/settings'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   AccountsRoute: typeof AccountsRoute
   GenerateRoute: typeof GenerateRoute
   HistoryRoute: typeof HistoryRoute
+  LoginRoute: typeof LoginRoute
   LogsRoute: typeof LogsRoute
   ScheduleRoute: typeof ScheduleRoute
   SettingsRoute: typeof SettingsRoute
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/logs'
       fullPath: '/logs'
       preLoaderRoute: typeof LogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/history': {
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountsRoute: AccountsRoute,
   GenerateRoute: GenerateRoute,
   HistoryRoute: HistoryRoute,
+  LoginRoute: LoginRoute,
   LogsRoute: LogsRoute,
   ScheduleRoute: ScheduleRoute,
   SettingsRoute: SettingsRoute,
