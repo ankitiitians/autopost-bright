@@ -54,7 +54,7 @@ function Dashboard() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (isLoading || !data) {
+  if (isLoading || !data || !data.settings) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-32" />)}
@@ -62,7 +62,8 @@ function Dashboard() {
     );
   }
 
-  const nr = nextRun(data.settings.post_time, data.settings.active_days);
+  const s = data.settings;
+  const nr = nextRun(s.post_time, s.active_days);
   const stats = [
     { label: "Posts Today", value: String(data.postsToday), trend: "Live", icon: TrendingUp, color: "text-info" },
     { label: "Posts This Week", value: String(data.postsThisWeek), trend: "Last 7 days", icon: CalendarClock, color: "text-primary" },
@@ -72,9 +73,9 @@ function Dashboard() {
 
   const services = [
     { name: "Lovable AI", status: "ok" as const, detail: "Gemini 2.5 Flash + Nano Banana" },
-    { name: "LinkedIn", status: data.settings.post_to_linkedin ? ("ok" as const) : ("error" as const), detail: data.settings.post_to_linkedin ? "Enabled" : "Disabled" },
-    { name: "Instagram", status: data.settings.post_to_instagram ? ("ok" as const) : ("error" as const), detail: data.settings.post_to_instagram ? "Enabled" : "Disabled" },
-    { name: "Scheduler", status: data.settings.schedule_enabled ? ("ok" as const) : ("error" as const), detail: `${data.settings.active_days.join(", ")} · ${data.settings.post_time}` },
+    { name: "LinkedIn", status: s.post_to_linkedin ? ("ok" as const) : ("error" as const), detail: s.post_to_linkedin ? "Enabled" : "Disabled" },
+    { name: "Instagram", status: s.post_to_instagram ? ("ok" as const) : ("error" as const), detail: s.post_to_instagram ? "Enabled" : "Disabled" },
+    { name: "Scheduler", status: s.schedule_enabled ? ("ok" as const) : ("error" as const), detail: `${s.active_days.join(", ")} · ${s.post_time}` },
   ];
 
   return (

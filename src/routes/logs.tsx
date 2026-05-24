@@ -32,7 +32,7 @@ function LogsPage() {
   });
 
   const clearMut = useMutation({
-    mutationFn: () => clearFn({ data: {} }),
+    mutationFn: () => clearFn(),
     onSuccess: () => { toast.success("Logs cleared"); qc.invalidateQueries({ queryKey: ["logs"] }); },
   });
 

@@ -148,7 +148,7 @@ function SettingsPage() {
         <Button
           variant="outline"
           className="border-destructive text-destructive hover:text-destructive"
-          onClick={async () => { await clearFn({ data: {} }); toast.success("Logs cleared"); qc.invalidateQueries({ queryKey: ["logs"] }); }}
+          onClick={async () => { await clearFn(); toast.success("Logs cleared"); qc.invalidateQueries({ queryKey: ["logs"] }); }}
         >
           Clear All Logs
         </Button>
