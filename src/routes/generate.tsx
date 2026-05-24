@@ -1,100 +1,99 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import {
-  Sparkles, Wand2, Image as ImageIcon, RefreshCw, Linkedin, Instagram,
-  Send, Heart, MessageCircle, Share2, Bookmark, ThumbsUp, Repeat2,
-  CalendarPlus,
+  Sparkles, Image as ImageIcon, RefreshCw, Linkedin, Instagram,
+  Send, Heart, MessageCircle, Share2, Bookmark, ThumbsUp, Repeat2, Loader2,
 } from "lucide-react";
-import { topicCategories, suggestTopic, genLinkedIn, genInstagram } from "@/lib/mock-data";
 import { toast } from "sonner";
+import { generateLinkedIn, generateInstagram, generateImageFn, publishNow } from "@/lib/workflow.functions";
 
 export const Route = createFileRoute("/generate")({ component: GeneratePage });
+
+const categories = ["DevOps", "AI / ML", "Cloud", "Productivity", "Leadership", "Startups", "Web Development"];
+const styles = ["Corporate Blue", "Dark Tech", "Minimal White", "Vibrant Gradient"];
 
 function GeneratePage() {
   const [topic, setTopic] = useState("Kubernetes automation");
   const [category, setCategory] = useState("DevOps");
   const [tone, setTone] = useState("Educational");
-  const [liHashtags, setLiHashtags] = useState(true);
-  const [liEmojis, setLiEmojis] = useState(false);
-  const [igHashtags, setIgHashtags] = useState(true);
-  const [igEmojis, setIgEmojis] = useState(true);
   const [liText, setLiText] = useState("");
   const [igText, setIgText] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imageStyle, setImageStyle] = useState("Corporate Blue");
-  const [genLi, setGenLi] = useState(false);
-  const [genIg, setGenIg] = useState(false);
-  const [genImg, setGenImg] = useState(false);
+  const [useCustomPrompt, setUseCustomPrompt] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState("");
 
-  const doGenLi = () => {
-    setGenLi(true);
-    setTimeout(() => { setLiText(genLinkedIn(topic, tone)); setGenLi(false); }, 1200);
-  };
-  const doGenIg = () => {
-    setGenIg(true);
-    setTimeout(() => { setIgText(genInstagram(topic)); setGenIg(false); }, 1200);
-  };
-  const doGenImg = () => {
-    setGenImg(true);
-    setTimeout(() => {
-      setImageUrl(`https://picsum.photos/seed/${encodeURIComponent(topic + imageStyle)}/600/600`);
-      setGenImg(false);
-    }, 1500);
-  };
+  const qc = useQueryClient();
+  const liFn = useServerFn(generateLinkedIn);
+  const igFn = useServerFn(generateInstagram);
+  const imgFn = useServerFn(generateImageFn);
+  const pubFn = useServerFn(publishNow);
+
+  const liMut = useMutation({
+    mutationFn: () => liFn({ data: { topic, tone } }),
+    onSuccess: (r) => setLiText(r.text),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const igMut = useMutation({
+    mutationFn: () => igFn({ data: { topic } }),
+    onSuccess: (r) => setIgText(r.text),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const imgMut = useMutation({
+    mutationFn: () => imgFn({ data: { topic, imageStyle, customPrompt: useCustomPrompt ? customPrompt : undefined } }),
+    onSuccess: (r) => setImageUrl(r.url),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const pubMut = useMutation({
+    mutationFn: (platform: "linkedin" | "instagram" | "both") =>
+      pubFn({
+        data: {
+          topic, platform,
+          linkedinText: liText || undefined,
+          instagramText: igText || undefined,
+          imageUrl: imageUrl || undefined,
+        },
+      }),
+    onSuccess: (r) => {
+      const ok = r.results.filter((x) => x.status === "success").length;
+      toast.success(`Published ${ok}/${r.results.length}`);
+      qc.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[1fr_440px] gap-6">
-      {/* Controls */}
       <div className="space-y-5">
         <Card className="p-6 space-y-4">
           <SectionTitle icon={<Sparkles className="w-4 h-4" />}>Topic</SectionTitle>
-          <div className="space-y-3">
-            <div>
-              <Label className="mb-1.5 block">Today's Topic</Label>
-              <div className="flex gap-2">
-                <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. Kubernetes automation" />
-                <Button variant="outline" onClick={() => setTopic(suggestTopic())} className="gap-1.5 shrink-0">
-                  <Wand2 className="w-4 h-4" /> Suggest
-                </Button>
-              </div>
-            </div>
-            <div>
-              <Label className="mb-1.5 block">Category</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {topicCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label className="mb-1.5 block">Topic</Label>
+            <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. Kubernetes automation" />
+          </div>
+          <div>
+            <Label className="mb-1.5 block">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+            </Select>
           </div>
         </Card>
 
         <Card className="p-6 space-y-4">
           <SectionTitle icon={<Linkedin className="w-4 h-4 text-[#0A66C2]" />}>LinkedIn Post</SectionTitle>
-          <Button onClick={doGenLi} disabled={genLi} className="w-full gap-2">
-            <Sparkles className="w-4 h-4" /> {genLi ? "Generating..." : "Generate LinkedIn Post"}
-          </Button>
-          {genLi ? (
-            <div className="space-y-2"><Skeleton className="h-4" /><Skeleton className="h-4 w-5/6" /><Skeleton className="h-4 w-2/3" /></div>
-          ) : liText && (
-            <>
-              <Textarea value={liText} onChange={(e) => setLiText(e.target.value)} rows={8} className="font-mono text-sm" />
-              <div className="text-xs text-muted-foreground text-right">{liText.length} characters</div>
-            </>
-          )}
           <div className="space-y-2">
             <Label>Tone</Label>
             <RadioGroup value={tone} onValueChange={setTone} className="flex gap-4">
@@ -105,56 +104,69 @@ function GeneratePage() {
               ))}
             </RadioGroup>
           </div>
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox checked={liHashtags} onCheckedChange={(v) => setLiHashtags(!!v)} /> Include hashtags
-            </label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox checked={liEmojis} onCheckedChange={(v) => setLiEmojis(!!v)} /> Include emojis
-            </label>
-          </div>
+          <Button onClick={() => liMut.mutate()} disabled={liMut.isPending} className="w-full gap-2">
+            {liMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {liMut.isPending ? "Generating..." : "Generate LinkedIn Post"}
+          </Button>
+          {liMut.isPending ? (
+            <div className="space-y-2"><Skeleton className="h-4" /><Skeleton className="h-4 w-5/6" /><Skeleton className="h-4 w-2/3" /></div>
+          ) : liText && (
+            <>
+              <Textarea value={liText} onChange={(e) => setLiText(e.target.value)} rows={8} className="font-mono text-sm" />
+              <div className="text-xs text-muted-foreground text-right">{liText.length} characters</div>
+            </>
+          )}
         </Card>
 
         <Card className="p-6 space-y-4">
           <SectionTitle icon={<Instagram className="w-4 h-4 text-pink-500" />}>Instagram Caption</SectionTitle>
-          <Button onClick={doGenIg} disabled={genIg} className="w-full gap-2">
-            <Sparkles className="w-4 h-4" /> {genIg ? "Generating..." : "Generate Instagram Caption"}
+          <Button onClick={() => igMut.mutate()} disabled={igMut.isPending} className="w-full gap-2">
+            {igMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {igMut.isPending ? "Generating..." : "Generate Instagram Caption"}
           </Button>
-          {genIg ? (
-            <div className="space-y-2"><Skeleton className="h-4" /><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-3/4" /></div>
+          {igMut.isPending ? (
+            <div className="space-y-2"><Skeleton className="h-4" /><Skeleton className="h-4 w-4/5" /></div>
           ) : igText && (
             <>
               <Textarea value={igText} onChange={(e) => setIgText(e.target.value)} rows={7} className="font-mono text-sm" />
               <div className="text-xs text-muted-foreground text-right">{igText.length} characters</div>
             </>
           )}
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox checked={igHashtags} onCheckedChange={(v) => setIgHashtags(!!v)} /> Include hashtags
-            </label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox checked={igEmojis} onCheckedChange={(v) => setIgEmojis(!!v)} /> Include emojis
-            </label>
-          </div>
         </Card>
 
         <Card className="p-6 space-y-4">
           <SectionTitle icon={<ImageIcon className="w-4 h-4 text-teal-500" />}>AI Image</SectionTitle>
-          <Select value={imageStyle} onValueChange={setImageStyle}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {["Corporate Blue", "Dark Tech", "Minimal White", "Vibrant Gradient"].map((s) =>
-                <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Button onClick={doGenImg} disabled={genImg} className="w-full gap-2 bg-teal-600 hover:bg-teal-700 text-white">
-            <ImageIcon className="w-4 h-4" /> {genImg ? "Generating image..." : "Generate Image"}
+          <label className="flex items-center justify-between text-sm">
+            <span>Use a custom image prompt</span>
+            <Switch checked={useCustomPrompt} onCheckedChange={setUseCustomPrompt} />
+          </label>
+          {useCustomPrompt ? (
+            <Textarea
+              value={customPrompt}
+              onChange={(e) => setCustomPrompt(e.target.value)}
+              rows={4}
+              placeholder="Describe exactly the image you want… (e.g. 'Isometric illustration of a server rack with glowing blue cables, dark navy background, minimal')"
+              className="font-mono text-sm"
+            />
+          ) : (
+            <Select value={imageStyle} onValueChange={setImageStyle}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{styles.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+          )}
+          <Button
+            onClick={() => imgMut.mutate()}
+            disabled={imgMut.isPending || (useCustomPrompt && customPrompt.trim().length === 0)}
+            className="w-full gap-2 bg-teal-600 hover:bg-teal-700 text-white"
+          >
+            {imgMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+            {imgMut.isPending ? "Generating image..." : "Generate Image"}
           </Button>
-          {genImg && <div className="w-full aspect-square rounded-xl bg-muted animate-pulse flex items-center justify-center text-muted-foreground text-sm">Generating image...</div>}
-          {!genImg && imageUrl && (
+          {imgMut.isPending && <div className="w-full aspect-square rounded-xl bg-muted animate-pulse" />}
+          {!imgMut.isPending && imageUrl && (
             <>
               <img src={imageUrl} alt="Generated" className="w-full max-w-[400px] rounded-xl border" />
-              <Button variant="outline" onClick={doGenImg} className="gap-2"><RefreshCw className="w-4 h-4" /> Regenerate</Button>
+              <Button variant="outline" onClick={() => imgMut.mutate()} className="gap-2"><RefreshCw className="w-4 h-4" /> Regenerate</Button>
             </>
           )}
         </Card>
@@ -162,17 +174,22 @@ function GeneratePage() {
         <Card className="p-6 space-y-3">
           <SectionTitle icon={<Send className="w-4 h-4" />}>Publish</SectionTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Button className="bg-[#0A66C2] hover:bg-[#0A66C2]/90 text-white gap-2" onClick={() => toast.success("Posted to LinkedIn (demo)")}>
-              <Linkedin className="w-4 h-4" /> Post to LinkedIn
-            </Button>
-            <Button className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white gap-2" onClick={() => toast.success("Posted to Instagram (demo)")}>
-              <Instagram className="w-4 h-4" /> Post to Instagram
-            </Button>
-            <Button className="gap-2 sm:col-span-2" onClick={() => toast.success("Posted to both platforms (demo)")}>
-              <Send className="w-4 h-4" /> Post to Both
-            </Button>
-            <Button variant="outline" className="gap-2 sm:col-span-2" onClick={() => toast.info("Scheduled for tomorrow 9:00 AM")}>
-              <CalendarPlus className="w-4 h-4" /> Schedule for Tomorrow 9 AM
+            <Button
+              className="bg-[#0A66C2] hover:bg-[#0A66C2]/90 text-white gap-2"
+              disabled={pubMut.isPending || !liText}
+              onClick={() => pubMut.mutate("linkedin")}
+            ><Linkedin className="w-4 h-4" /> Post to LinkedIn</Button>
+            <Button
+              className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white gap-2"
+              disabled={pubMut.isPending || !igText || !imageUrl}
+              onClick={() => pubMut.mutate("instagram")}
+            ><Instagram className="w-4 h-4" /> Post to Instagram</Button>
+            <Button
+              className="gap-2 sm:col-span-2"
+              disabled={pubMut.isPending || (!liText && !igText)}
+              onClick={() => pubMut.mutate("both")}
+            >
+              {pubMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Post to Both
             </Button>
           </div>
         </Card>
@@ -212,17 +229,12 @@ function GeneratePage() {
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-0.5">
                   <div className="w-full h-full rounded-full bg-card" />
                 </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-sm">your.handle</div>
-                </div>
-                <Button size="sm" variant="ghost" className="text-info text-xs h-7">Follow</Button>
+                <div className="flex-1"><div className="font-semibold text-sm">your.handle</div></div>
               </div>
               {imageUrl ? (
                 <img src={imageUrl} alt="" className="w-full aspect-square object-cover" />
               ) : (
-                <div className="w-full aspect-square bg-muted grid grid-cols-3 grid-rows-3 gap-px">
-                  {Array.from({ length: 9 }).map((_, i) => <div key={i} className="bg-background/40" />)}
-                </div>
+                <div className="w-full aspect-square bg-muted" />
               )}
               <div className="flex items-center gap-4 p-3">
                 <Heart className="w-6 h-6" />
@@ -230,11 +242,9 @@ function GeneratePage() {
                 <Share2 className="w-6 h-6" />
                 <Bookmark className="w-6 h-6 ml-auto" />
               </div>
-              <div className="px-3 pb-1 text-sm font-semibold">1,284 likes</div>
               <div className="px-3 pb-4 text-sm whitespace-pre-wrap min-h-[60px]">
                 {igText ? (
-                  <><span className="font-semibold">your.handle</span> {igText.split(/(#\w+)/g).map((part, i) =>
-                    part.startsWith("#") ? <span key={i} className="text-info">{part}</span> : <span key={i}>{part}</span>)}</>
+                  <><span className="font-semibold">your.handle</span> {igText}</>
                 ) : <span className="text-muted-foreground italic">Generate a caption to see preview…</span>}
               </div>
             </Card>

@@ -1,12 +1,17 @@
-import { Link, useRouterState, Outlet } from "@tanstack/react-router";
+import { Link, useRouterState, Outlet, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   LayoutDashboard, Sparkles, CalendarClock, Link2, History,
-  ScrollText, Settings, Zap, LogOut, Moon, Sun, Play, Menu,
+  ScrollText, Settings, Zap, LogOut, Moon, Sun, Play, Menu, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { runNow } from "@/lib/workflow.functions";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -32,17 +37,35 @@ export function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [dark, setDark] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const runFn = useServerFn(runNow);
+
+  const runMut = useMutation({
+    mutationFn: () => runFn({ data: {} }),
+    onSuccess: (r) => {
+      const ok = r.results.filter((x) => x.status === "success").length;
+      toast.success(`Workflow complete — ${ok}/${r.results.length} posts published`, {
+        description: `Topic: ${r.topic}`,
+      });
+      qc.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const toggleDark = () => {
     document.documentElement.classList.toggle("dark");
     setDark((d) => !d);
   };
 
-  const runNow = () => toast.info("Automation started — watch the Logs page for live updates");
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/login" });
+  };
 
   return (
     <div className={cn("min-h-screen bg-background text-foreground flex")}>
-      {/* Sidebar */}
       <aside
         className={cn(
           "bg-sidebar text-sidebar-foreground w-60 shrink-0 flex flex-col border-r border-sidebar-border z-40",
@@ -85,12 +108,12 @@ export function AppLayout() {
 
         <div className="px-4 py-4 border-t border-sidebar-border">
           <div className="text-xs text-sidebar-foreground/60 mb-2">Signed in as</div>
-          <div className="text-sm font-medium truncate mb-3">admin@autopost.ai</div>
+          <div className="text-sm font-medium truncate mb-3">{user?.email ?? "—"}</div>
           <Button
             variant="ghost"
             size="sm"
             className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-            onClick={() => toast.info("Sign out — connect auth to enable")}
+            onClick={signOut}
           >
             <LogOut className="w-4 h-4 mr-2" /> Sign out
           </Button>
@@ -98,34 +121,24 @@ export function AppLayout() {
       </aside>
 
       {mobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/40 z-30"
-          onClick={() => setMobileOpen(false)}
-        />
+        <div className="lg:hidden fixed inset-0 bg-black/40 z-30" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 border-b bg-card/50 backdrop-blur sticky top-0 z-20 flex items-center justify-between px-4 lg:px-8">
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setMobileOpen(true)}
-            >
+            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)}>
               <Menu className="w-5 h-5" />
             </Button>
-            <h1 className="text-lg font-semibold tracking-tight">
-              {titles[pathname] ?? "AutoPost AI"}
-            </h1>
+            <h1 className="text-lg font-semibold tracking-tight">{titles[pathname] ?? "AutoPost AI"}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={toggleDark}>
               {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
-            <Button onClick={runNow} className="gap-2 shadow-lg shadow-primary/20">
-              <Play className="w-4 h-4" fill="currentColor" /> Run Now
+            <Button onClick={() => runMut.mutate()} disabled={runMut.isPending} className="gap-2 shadow-lg shadow-primary/20">
+              {runMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" fill="currentColor" />}
+              {runMut.isPending ? "Running…" : "Run Now"}
             </Button>
           </div>
         </header>
